@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Complete Review App</title>
+    <!-- Tailwind CSS laden -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Konfiguration für Dark Mode und Inter Schriftart -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Dunkles Design Farben
+                        'dark-bg': '#10172A', // Dunkler, tiefblauer Hintergrund
+                        'dark-card': '#1E293B', // Hellere Karte
+                        'dark-accent': '#334155', // Akzentfarbe für Ränder/Trenner
+                        'dark-text': '#F1F5F9',
+                        'primary-btn': '#EC4899', // Helles, spielerisches Pink (Pink-500)
+                        'primary-btn-hover': '#DB2777', // Dunkleres Pink
+                        'secondary-btn': '#6366F1', // Violett/Blau
+                        'secondary-btn-hover': '#4F46E5',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Import der Inter Schriftart */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        /* Zusätzlicher, spielerischer Effekt für die Buttons */
+        .bubble-btn {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        .bubble-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-dark-bg text-dark-text font-sans min-h-screen p-4 sm:p-8 flex flex-col items-center">
+
+    <div class="w-full max-w-4xl">
+        <!-- HEADER mit starker Rundung und Shadow -->
+        <header class="text-center mb-10 p-6 bg-dark-card rounded-[3rem] shadow-2xl shadow-primary-btn/30">
+            <h1 class="text-4xl sm:text-5xl font-extrabold mb-2 text-primary-btn">Mission Complete Reviews</h1>
+            <p class="text-lg text-gray-300">Ihre Meinung zählt! Bewerten Sie das Produkt oder sehen Sie, was andere sagen.</p>
+        </header>
+
+        <!-- HAUPT-BUTTONS (Pill-Form) -->
+        <div class="flex flex-col sm:flex-row gap-5 mb-12 justify-center">
+            
+            <!-- 1. Review schreiben Button (Mailto Link) -->
+            <a id="writeReviewBtn" href="#"
+                class="bubble-btn flex-1 py-4 px-8 bg-primary-btn hover:bg-primary-btn-hover text-white font-bold rounded-full shadow-lg transition duration-300 ease-in-out text-center text-xl transform min-w-[200px] hover:ring-4 hover:ring-primary-btn/50">
+                ✍️ Review Schreiben (E-Mail)
+            </a>
+
+            <!-- 2. Bewertungen Anzeigen Button (Steuert Sichtbarkeit des Firestore-Bereichs) -->
+            <button id="viewReviewsToggleBtn"
+                class="bubble-btn flex-1 py-4 px-8 bg-secondary-btn hover:bg-secondary-btn-hover text-dark-text font-bold rounded-full shadow-lg transition duration-300 ease-in-out text-center text-xl transform min-w-[200px] hover:ring-4 hover:ring-secondary-btn/50">
+                ⭐ Bewertungen Anzeigen
+            </button>
+        </div>
+
+        <!-- Firestore Review Bereich (Wird dynamisch ein-/ausgeblendet) -->
+        <div id="reviewSection" class="hidden bg-dark-card p-6 sm:p-10 rounded-[2.5rem] shadow-2xl shadow-dark-accent/50 border border-dark-accent">
+            <h2 class="text-3xl font-bold text-primary-btn mb-6 border-b border-dark-accent pb-2">Echte Nutzer-Bewertungen</h2>
+            
+            <!-- Formular zum Hinzufügen einer Bewertung -->
+            <div class="mb-8 p-6 bg-dark-bg rounded-2xl shadow-inner shadow-dark-accent/50">
+                <h3 class="text-2xl font-semibold mb-4 text-secondary-btn">Eigene Bewertung hinzufügen</h3>
+                <form id="addReviewForm" class="space-y-4">
+                    <div class="flex flex-col">
+                        <label for="ratingInput" class="text-dark-text mb-2 font-medium">Bewertung (1-5 Sterne):</label>
+                        <select id="ratingInput" required
+                            class="p-3 rounded-xl bg-dark-card border border-dark-accent focus:ring-2 focus:ring-primary-btn focus:border-primary-btn text-dark-text">
+                            <option value="5">5 Sterne - Ausgezeichnet</option>
+                            <option value="4">4 Sterne - Sehr Gut</option>
+                            <option value="3">3 Sterne - Gut</option>
+                            <option value="2">2 Sterne - Durchschnittlich</option>
+                            <option value="1">1 Stern - Schlecht</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="commentInput" class="text-dark-text mb-2 font-medium">Kommentar:</label>
+                        <textarea id="commentInput" rows="4" required
+                            class="p-3 rounded-xl bg-dark-card border border-dark-accent focus:ring-2 focus:ring-primary-btn focus:border-primary-btn text-dark-text placeholder-gray-500"
+                            placeholder="Schreiben Sie hier Ihren Kommentar..."></textarea>
+                    </div>
+                    <button type="submit"
+                        class="bubble-btn w-full py-3 bg-primary-btn hover:bg-primary-btn-hover text-white font-bold rounded-full transition duration-300">
+                        Bewertung Speichern
+                    </button>
+                </form>
+            </div>
+
+            <!-- Container für die angezeigten Bewertungen -->
+            <div id="reviewsContainer" class="space-y-5">
+                <p id="loadingMessage" class="text-center text-gray-400">Lade Bewertungen...</p>
+                <!-- Hier werden die Bewertungen von Firestore eingefügt -->
+            </div>
+            
+        </div>
+        
+    </div>
+    
+    <!-- Toast/Modal für Bestätigungen (ersetzt alert()) -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-green-600 text-white p-4 rounded-xl shadow-2xl hidden transition duration-300">
+        Nachricht hier
+    </div>
+
+    <!-- Firebase SDKs laden -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Globale Variablen aus dem Canvas Environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+
+        // UI-Elemente
+        const writeReviewBtn = document.getElementById('writeReviewBtn');
+        const viewReviewsToggleBtn = document.getElementById('viewReviewsToggleBtn');
+        const reviewSection = document.getElementById('reviewSection');
+        const addReviewForm = document.getElementById('addReviewForm');
+        const reviewsContainer = document.getElementById('reviewsContainer');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const toast = document.getElementById('toast');
+
+        /**
+         * Zeigt eine Toast-Benachrichtigung anstelle von alert().
+         * @param {string} message - Die anzuzeigende Nachricht.
+         * @param {string} type - 'success' oder 'error'.
+         */
+        function showToast(message, type = 'success') {
+            toast.textContent = message;
+            // Verwenden Sie eine abgerundete Toast-Box
+            toast.className = `fixed bottom-5 right-5 z-50 text-white p-4 rounded-xl shadow-2xl transition duration-300 ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        /**
+         * Initialisiert Firebase und führt die Authentifizierung durch.
+         */
+        async function initializeFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Authentifizierung
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Warten auf den Auth-Status
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. User ID:", userId);
+                        // Abonnieren der Bewertungen starten, sobald Auth fertig ist
+                        subscribeToReviews();
+                    } else {
+                        userId = null;
+                        isAuthReady = true;
+                        console.log("Firebase Auth Ready. No user signed in.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Fehler bei der Firebase-Initialisierung oder Authentifizierung:", error);
+                showToast("Fehler bei der Initialisierung des Bewertungssystems.", 'error');
+            }
+        }
+
+        // --- 1. Review Schreiben (Mailto) Logik ---
+
+        const mailtoRecipient = "timo.rusch13@g-mail.com,markus.huber142@gmail.com";
+        const mailtoSubject = "Review of \"Mission Complete\"";
+        const mailtoBody = "Hallo Timo und Markus,\n\nIch möchte meine Bewertung für \"Mission Complete\" abgeben. Hier sind meine Details zum Ausfüllen:\n\n* Bewertung (Sterne 1-5): [HIER ZAHL EINFÜGEN]\n* Kurzer Titel: [HIER TITEL EINFÜGEN]\n* Detaillierter Kommentar: [HIER KOMMENTAR EINFÜGEN]\n\nVielen Dank!";
+
+        const mailtoLink = `mailto:${mailtoRecipient}?subject=${encodeURIComponent(mailtoSubject)}&body=${encodeURIComponent(mailtoBody)}`;
+
+        writeReviewBtn.href = mailtoLink;
+
+        // --- 2. Bewertungen Anzeigen (Firestore) Logik ---
+
+        // Pfad zur öffentlichen Sammlung
+        function getReviewsCollectionRef() {
+            // /artifacts/{appId}/public/data/{your_collection_name}
+            return collection(db, `artifacts/${appId}/public/data/mission_reviews`);
+        }
+
+        /**
+         * Abonniert die Bewertungen in Firestore und aktualisiert die UI.
+         */
+        function subscribeToReviews() {
+            if (!isAuthReady || !db) return;
+
+            loadingMessage.textContent = "Lade Bewertungen...";
+            const reviewsQuery = query(getReviewsCollectionRef());
+
+            onSnapshot(reviewsQuery, (snapshot) => {
+                const reviews = [];
+                snapshot.forEach((doc) => {
+                    reviews.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sortieren der Bewertungen lokal nach Zeitstempel (neueste zuerst)
+                reviews.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+
+                renderReviews(reviews);
+            }, (error) => {
+                console.error("Fehler beim Abrufen der Bewertungen:", error);
+                loadingMessage.textContent = "Fehler beim Laden der Bewertungen.";
+                showToast("Fehler beim Laden der Bewertungen.", 'error');
+            });
+        }
+
+        /**
+         * Rendert die Liste der Bewertungen.
+         * @param {Array<Object>} reviews - Die Liste der Bewertungen.
+         */
+        function renderReviews(reviews) {
+            reviewsContainer.innerHTML = '';
+            loadingMessage.classList.add('hidden');
+
+            if (reviews.length === 0) {
+                reviewsContainer.innerHTML = '<p class="text-center text-gray-400 p-4 rounded-xl bg-dark-bg">Noch keine Bewertungen vorhanden. Sei der Erste!</p>';
+                return;
+            }
+
+            reviews.forEach(review => {
+                const reviewElement = document.createElement('div');
+                
+                // Erstellung der Sterne-Anzeige
+                const starRating = '⭐'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                
+                // Formatierung des Zeitstempels
+                let dateString = 'Datum unbekannt';
+                if (review.timestamp && review.timestamp.toDate) {
+                    dateString = new Date(review.timestamp.toDate()).toLocaleDateString('de-DE', {
+                        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    });
+                }
+                
+                // Formatierung der User ID
+                const displayUserId = review.userId || 'Anonym';
+
+                // Verwenden Sie rounded-2xl und stärkere Schatten
+                reviewElement.className = 'bg-dark-bg p-5 rounded-2xl shadow-xl border-l-8 border-primary-btn/80 transform transition duration-200 hover:scale-[1.01]';
+                reviewElement.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b border-dark-accent pb-2">
+                        <span class="text-3xl mb-1 sm:mb-0">${starRating}</span>
+                        <span class="text-sm text-gray-400">${dateString}</span>
+                    </div>
+                    <p class="text-lg font-semibold text-dark-text mb-2">${review.comment}</p>
+                    <p class="text-xs text-gray-500 mt-3 pt-2 border-t border-dark-accent/50">Bewertet von: <span class="font-mono text-xs text-secondary-btn font-bold break-all">${displayUserId}</span></p>
+                `;
+                reviewsContainer.appendChild(reviewElement);
+            });
+        }
+
+        /**
+         * Fügt eine neue Bewertung zu Firestore hinzu.
+         */
+        addReviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!isAuthReady || !userId) {
+                showToast("Authentifizierung läuft noch. Bitte warten Sie einen Moment.", 'error');
+                return;
+            }
+
+            const ratingInput = document.getElementById('ratingInput');
+            const commentInput = document.getElementById('commentInput');
+
+            const newReview = {
+                userId: userId, // Die vollständige User ID
+                rating: parseInt(ratingInput.value, 10),
+                comment: commentInput.value.trim(),
+                timestamp: serverTimestamp(),
+            };
+
+            try {
+                await addDoc(getReviewsCollectionRef(), newReview);
+                showToast("Bewertung erfolgreich gespeichert! Sie wird nun angezeigt.", 'success');
+                addReviewForm.reset();
+            } catch (error) {
+                console.error("Fehler beim Speichern der Bewertung:", error);
+                showToast("Fehler beim Speichern der Bewertung.", 'error');
+            }
+        });
+
+
+        // --- UI-Toggle Logik ---
+
+        viewReviewsToggleBtn.addEventListener('click', () => {
+            const isHidden = reviewSection.classList.contains('hidden');
+            
+            if (isHidden) {
+                reviewSection.classList.remove('hidden');
+                viewReviewsToggleBtn.textContent = '👆 Bewertungen Ausblenden';
+                viewReviewsToggleBtn.classList.add('bg-secondary-btn-hover');
+                viewReviewsToggleBtn.classList.remove('bg-secondary-btn');
+            } else {
+                reviewSection.classList.add('hidden');
+                viewReviewsToggleBtn.textContent = '⭐ Bewertungen Anzeigen';
+                viewReviewsToggleBtn.classList.remove('bg-secondary-btn-hover');
+                viewReviewsToggleBtn.classList.add('bg-secondary-btn');
+            }
+        });
+        
+        // App Start
+        initializeFirebase();
+
+    </script>
+</body>
+</html>
